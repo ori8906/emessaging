@@ -25,9 +25,8 @@ def create_app(test_config=None):
     from . import auth
     app.register_blueprint(auth.bp)
 
-    # a simple page that says hello
-    @app.route('/what')
-    def hello():
-        return 'Hello, world!'
+    from . import inbox
+    app.register_blueprint(inbox.bp)
+    app.add_url_rule('/', endpoint='index')
     
     return app

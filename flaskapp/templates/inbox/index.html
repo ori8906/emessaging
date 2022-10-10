@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block header %}
+<h1>{% block title %}Messages{% endblock %}</h1>
+{% if g.user %}
+<a class="action" href="{{ url_for('inbox.create') }}">New</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+{% for message in messages %}
+<article class="post">
+    <header>
+        <div>
+            <h1>{{ message['title'] }}</h1>
+            <div class="about">from {{ message['username'] }} on {{ message['created'].strftime('%Y-%m-%d') }}</div>
+        </div>
+        <a class="action" href="{{ url_for('inbox.details', id=message['id']) }}">View</a>
+    </header>
+</article>
+{% if not loop.last %}
+<hr>
+{% endif %}
+{% endfor %}
+{% endblock %}
