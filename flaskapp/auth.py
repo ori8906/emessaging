@@ -3,6 +3,7 @@ import functools
 from flask import (Blueprint, flash, g, redirect, render_template, request, session, url_for)
 from werkzeug.security import check_password_hash, generate_password_hash
 from flaskapp.db import get_db
+from flaskapp.services.emailservice import EmailService
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
 
@@ -41,6 +42,9 @@ def register():
             except db.IntegrityError:
                 error = f"User {username} is already registered."
             else:
+                emailservice = EmailService()
+                emailservice.send_email(email, "eMessaging Account Activation",
+                    "Activate your account by following this link...")
                 return redirect(url_for("auth.login"))
 
         flash(error)
