@@ -40,29 +40,38 @@ def index():
 @bp.route('/create', methods=('GET', 'POST'))
 @login_required
 def create():
-    if request.method == 'POST':
-        title = request.form['title']
-        body = request.form['body']
-        recipient = request.form['to']
-        error = None
+    if request.method == 'GET':
+        return render_template('inbox/create.html')
+    title = request.form['title']
+    body = request.form['body']
+    recipient = request.form['to']
+    error = None
 
-        if not title:
-            error = 'Title is required.'
-        if not body:
-            error = 'Body is required.'
-        if not recipient:
-            error = 'Recipient is required.'
-        
-        if error is not None:
-            flash(error)
-        else:
-            db = get_db()
-            db.execute(
-                'INSERT INTO message (author_id, title, body, to_id) VALUES (?, ?, ?, ?)',
-                (g.user['id'], title, body, recipient))
-            db.commit()
-            return redirect(url_for('inbox.index'))
-    return render_template('inbox/create.html')
+    if not title:
+        error = 'Title is required.'
+    if not body:
+        error = 'Body is required.'
+    if not recipient:
+        error = 'Recipient is required.'
+    
+    if error is not None:
+        flash(error)
+        return render_template('inbox/create.html')
+
+    db = get_db()
+    recipientUser = db.execute(
+        'SELECT id FROM user WHERE username = ?',
+        (recipient,)
+    ).fetchone()
+    if not recipientUser or not recipientUser['id']:
+        flash("Invalid recipient.")
+        return render_template('inbox/create.html')
+
+    db.execute(
+        'INSERT INTO message (author_id, title, body, to_id) VALUES (?, ?, ?, ?)',
+        (g.user['id'], title, body, recipientUser['id']))
+    db.commit()
+    return redirect(url_for('inbox.index'))
 
 @bp.route('/<int:id>/details', methods=('GET',))
 @login_required
