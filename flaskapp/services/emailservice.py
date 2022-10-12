@@ -1,11 +1,12 @@
 from email.message import EmailMessage
+from flask import current_app
 import smtplib
 
 class EmailService:
 
     def __init__(self) -> None:
-        self.email_username = "graciao@uninorte.edu.co"
-        self.email_password = "MinTic2.." # TODO: retrieve from configuration file.
+        self.email_username = current_app.config["EMAIL_USERNAME"]
+        self.email_password = current_app.config["EMAIL_PASSWORD"]
     
     def send_email(self, recipient_email, subject, message_body):
        email = EmailMessage()
