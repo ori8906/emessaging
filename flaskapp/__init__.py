@@ -1,6 +1,7 @@
 import os
 
 from flask import Flask
+from flaskapp.config import Config
 
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
@@ -10,7 +11,7 @@ def create_app(test_config=None):
     )
 
     if test_config is None:
-        app.config.from_pyfile('config.py', silent=True)
+        app.config.from_object(Config())
     else:
         app.config.from_mapping(test_config)
 

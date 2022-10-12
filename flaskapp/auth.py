@@ -20,36 +20,59 @@ def load_logged_in_user():
 
 @bp.route('/register', methods=('GET', 'POST'))
 def register():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        email = request.form['email']
-        db = get_db()
-        error = None
+    if request.method != 'POST':
+        return render_template('auth/register.html')
 
-        if not username:
-            error = 'Username is required.'
-        elif not password:
-            error = 'Password is required.'
+    username = request.form['username']
+    password = request.form['password']
+    email = request.form['email']
+    db = get_db()
+    error = None
 
-        if error is None:
-            try:
-                db.execute(
-                    "INSERT INTO user (username, password_hash, email) VALUES (?, ?, ?)",
-                    (username, generate_password_hash(password), email),
-                )
-                db.commit()
-            except db.IntegrityError:
-                error = f"User {username} is already registered."
-            else:
-                emailservice = EmailService()
-                emailservice.send_email(email, "eMessaging Account Activation",
-                    "Activate your account by following this link...")
-                return redirect(url_for("auth.login"))
+    if not username:
+        error = 'Username is required.'
+    elif not password:
+        error = 'Password is required.'
 
+    if error is not None:
         flash(error)
+        return render_template('auth/register.html')
 
-    return render_template('auth/register.html')
+    try:
+        db.execute(
+            "INSERT INTO user (username, password_hash, email, activated) VALUES (?, ?, ?, 0)",
+            (username, generate_password_hash(password), email),
+        )
+        db.commit()
+    except db.IntegrityError:
+        flash(f"User {username} is already registered.")
+        return render_template('auth/register.html')
+
+    activationLink = url_for("auth.activate", _external=True) + "?account=" + email
+    emailservice = EmailService()
+    emailservice.send_email(email, "eMessaging Account Activation",
+        f"Activate your account by following this link: { activationLink }")
+    return redirect(url_for("auth.login"))
+
+@bp.route("/activate", methods=("GET",))
+def activate():
+    emailToActivate = request.args["account"]
+    if emailToActivate is None:
+        flash("Incorrect activation link.")
+        return redirect(url_for("auth.login"))
+    
+    db = get_db()
+    try:
+        db.execute(
+            "UPDATE user SET activated = 1 WHERE email = ?",
+            (emailToActivate,)
+        )
+        db.commit()
+    except db.IntegrityError:
+        flash("No such user to activate.")
+        return redirect(url_for("auth.login"))
+    
+    return redirect(url_for("auth.login"))
 
 @bp.route('/login', methods=('GET', 'POST'))
 def login():
@@ -59,7 +82,8 @@ def login():
         db = get_db()
         error = None
         user = db.execute(
-            'SELECT * FROM user WHERE username = ?', (username,)
+            'SELECT * FROM user WHERE username = ? AND activated = 1',
+            (username,)
         ).fetchone()
 
         if user is None:
