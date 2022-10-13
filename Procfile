@@ -1,1 +1,1 @@
-web: gunicorn flaskapp:emessaging
+web: gunicorn flaskapp:create_app()
