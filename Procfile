@@ -1,1 +1,1 @@
-web: gunicorn flaskapp:app
+web: gunicorn flaskapp:create_app
